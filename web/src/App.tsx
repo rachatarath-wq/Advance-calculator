@@ -2,6 +2,7 @@ import { useEffect, useMemo, useRef, useState } from 'react'
 import Katex from './Katex'
 import Plot from './Plot'
 import AcPowerPanel from './AcPower'
+import ChopperPowerPanel from './ChopperPower'
 import { analyze, ensureEngine, type Analysis } from './engine'
 
 const SAMPLES = 400
@@ -65,7 +66,7 @@ function robustRange(series: number[][]): [number, number] {
 type Mode = 'derivative' | 'integral'
 
 export default function App() {
-  const [view, setView] = useState<'calculus' | 'acpower'>('calculus')
+  const [view, setView] = useState<'calculus' | 'acpower' | 'chopper'>('calculus')
   const [input, setInput] = useState(EXAMPLES[0])
   const [xMin, setXMin] = useState(-8)
   const [xMax, setXMax] = useState(8)
@@ -319,6 +320,9 @@ export default function App() {
         <button className={view === 'acpower' ? 'active' : ''} onClick={() => setView('acpower')}>
           ⚡ AC Power
         </button>
+        <button className={view === 'chopper' ? 'active' : ''} onClick={() => setView('chopper')}>
+          ✂️ Chopper
+        </button>
       </nav>
 
       {view === 'calculus' && (
@@ -427,6 +431,8 @@ export default function App() {
       )}
 
       {view === 'acpower' && <AcPowerPanel />}
+
+      {view === 'chopper' && <ChopperPowerPanel />}
     </div>
   )
 }

@@ -6,6 +6,7 @@
 
 pub mod ac;
 pub mod ast;
+pub mod chopper;
 pub mod diff;
 pub mod eval;
 pub mod integrate;
@@ -146,5 +147,18 @@ pub fn process_json(input: &str, x_min: f64, x_max: f64, samples: usize) -> Stri
 /// JSON wrapper for [`ac::ac_power`].
 pub fn ac_power_json(v_peak: f64, i_peak: f64, frequency: f64, phase_deg: f64, samples: usize) -> String {
     serde_json::to_string(&ac::ac_power(v_peak, i_peak, frequency, phase_deg, samples))
+        .unwrap_or_else(|_| r#"{"ok":false,"error":"serialization failed"}"#.to_string())
+}
+
+/// JSON wrapper for [`chopper::chopper_power`].
+pub fn chopper_power_json(
+    v_peak: f64,
+    load_r: f64,
+    frequency: f64,
+    alpha_deg: f64,
+    beta_deg: f64,
+    samples: usize,
+) -> String {
+    serde_json::to_string(&chopper::chopper_power(v_peak, load_r, frequency, alpha_deg, beta_deg, samples))
         .unwrap_or_else(|_| r#"{"ok":false,"error":"serialization failed"}"#.to_string())
 }

@@ -120,3 +120,33 @@ fn ac_power_rejects_bad_frequency() {
     assert!(!a.ok);
     assert!(a.error.is_some());
 }
+
+#[test]
+fn chopper_full_conduction() {
+    // α=0°, β=180° → no chopping: P = Vm²/(2R) = 311²/100 ≈ 967.2 W.
+    let c = calcsim_core::chopper::chopper_power(311.0, 50.0, 50.0, 0.0, 180.0, 800);
+    assert!(c.ok, "{}", c.error.unwrap_or_default());
+    let expected = 311.0f64.powi(2) / 100.0;
+    assert!((c.avg_power - expected).abs() < 1.0, "got {}", c.avg_power);
+    assert!((c.rms_v - 311.0 / 2.0f64.sqrt()).abs() < 0.5);
+    assert!((c.conduction_duty - 1.0).abs() < 1e-9);
+    assert_eq!(c.ts.len(), c.ps.len());
+}
+
+#[test]
+fn chopper_half_conduction() {
+    // α=0°, β=90° → P = Vm²/(4R) = 311²/200 ≈ 483.6 W.
+    let c = calcsim_core::chopper::chopper_power(311.0, 50.0, 50.0, 0.0, 90.0, 800);
+    assert!(c.ok);
+    let expected = 311.0f64.powi(2) / 200.0;
+    assert!((c.avg_power - expected).abs() < 1.0, "got {}", c.avg_power);
+    assert!((c.conduction_duty - 0.5).abs() < 1e-9);
+}
+
+#[test]
+fn chopper_rejects_bad_input() {
+    // α ≥ β, f = 0, and R = 0 are all invalid.
+    assert!(!calcsim_core::chopper::chopper_power(311.0, 50.0, 50.0, 150.0, 30.0, 800).ok);
+    assert!(!calcsim_core::chopper::chopper_power(311.0, 50.0, 0.0, 0.0, 180.0, 800).ok);
+    assert!(!calcsim_core::chopper::chopper_power(311.0, 0.0, 50.0, 0.0, 180.0, 800).ok);
+}

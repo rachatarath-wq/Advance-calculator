@@ -3,6 +3,7 @@
 import initWasm, {
   process as wasmProcess,
   ac_power as wasmAcPower,
+  chopper_power as wasmChopperPower,
 } from './wasm/calcsim_wasm.js'
 import wasmUrl from './wasm/calcsim_wasm_bg.wasm?url'
 
@@ -83,4 +84,46 @@ export function acPower(
   samples = 600,
 ): AcPowerResult {
   return JSON.parse(wasmAcPower(vPeak, iPeak, frequency, phaseDeg, samples)) as AcPowerResult
+}
+
+/** Mirrors `calcsim_core::chopper::ChopperPower` (serde JSON). */
+export interface ChopperPowerResult {
+  ok: boolean
+  error?: string
+  v_peak: number
+  load_r: number
+  frequency: number
+  alpha_deg: number
+  beta_deg: number
+  angular_freq: number
+  period: number
+  alpha_rad: number
+  beta_rad: number
+  avg_power: number
+  rms_v: number
+  rms_i: number
+  conduction_duty: number
+  v_latex: string
+  i_latex: string
+  integral_latex: string
+  t0: number
+  t1: number
+  ts: number[]
+  vs: number[]
+  i_vals: number[]
+  ps: number[]
+}
+
+/** Analyse a chopped (phase-controlled) sine wave with a resistive load. */
+export function chopperPower(
+  vPeak: number,
+  loadR: number,
+  frequency: number,
+  alphaDeg: number,
+  betaDeg: number,
+  samples = 800,
+): ChopperPowerResult {
+  return JSON.parse(
+    wasmChopperPower(vPeak, loadR, frequency, alphaDeg, betaDeg, samples),
+  ) as ChopperPowerResult
 }
