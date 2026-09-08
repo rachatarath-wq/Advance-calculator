@@ -150,3 +150,62 @@ fn chopper_rejects_bad_input() {
     assert!(!calcsim_core::chopper::chopper_power(311.0, 50.0, 0.0, 0.0, 180.0, 800).ok);
     assert!(!calcsim_core::chopper::chopper_power(311.0, 0.0, 50.0, 0.0, 180.0, 800).ok);
 }
+
+#[test]
+fn rl_ac_power_inductive() {
+    // R = 50 Ω, ωL = 28.868 Ω (φ = 30°), Vm = 311 V, f = 50 Hz.
+    let f = 50.0;
+    let r = 50.0;
+    let l = (r * 30.0f64.to_radians().tan()) / (2.0 * std::f64::consts::PI * f);
+    let a = calcsim_core::rl::rl_ac_power(311.0, r, l, f, 800);
+    assert!(a.ok, "{}", a.error.unwrap_or_default());
+    let z = (r * r + (2.0 * std::f64::consts::PI * f * l).powi(2)).sqrt();
+    let expected = 311.0f64.powi(2) * r / (2.0 * z * z);
+    assert!((a.avg_power - expected).abs() < 1.0, "got {} vs {expected}", a.avg_power);
+    assert!((a.power_factor - 30.0f64.to_radians().cos()).abs() < 1e-6);
+    assert!(a.reactive_power > 0.0, "inductive Q should be positive");
+    assert_eq!(a.ts.len(), a.ps.len());
+}
+
+#[test]
+fn rl_ac_power_rejects_bad_input() {
+    assert!(!calcsim_core::rl::rl_ac_power(311.0, 50.0, 0.0, 50.0, 800).ok); // L = 0
+    assert!(!calcsim_core::rl::rl_ac_power(311.0, 0.0, 0.1, 50.0, 800).ok); // R = 0
+    assert!(!calcsim_core::rl::rl_ac_power(311.0, 50.0, 0.1, 0.0, 800).ok); // f = 0
+}
+
+#[test]
+fn rl_chopper_continuous_conduction() {
+    // α = 10° < φ = 30° → CCM: output equals full sine, PF = cos φ.
+    let f = 50.0;
+    let r = 50.0;
+    let l = (r * 30.0f64.to_radians().tan()) / (2.0 * std::f64::consts::PI * f);
+    let c = calcsim_core::rl::rl_chopper(311.0, r, l, f, 10.0, 800);
+    assert!(c.ok, "{}", c.error.unwrap_or_default());
+    assert!(c.continuous);
+    let z = (r * r + (2.0 * std::f64::consts::PI * f * l).powi(2)).sqrt();
+    let expected = 311.0f64.powi(2) * r / (2.0 * z * z);
+    assert!((c.avg_power - expected).abs() < 1.0, "got {} vs {expected}", c.avg_power);
+    assert!((c.power_factor - 30.0f64.to_radians().cos()).abs() < 1e-6);
+}
+
+#[test]
+fn rl_chopper_discontinuous_conduction() {
+    // α = 90° > φ = 30° → DCM: extinction angle β′ > 180°, power less than full.
+    let f = 50.0;
+    let r = 50.0;
+    let l = (r * 30.0f64.to_radians().tan()) / (2.0 * std::f64::consts::PI * f);
+    let c = calcsim_core::rl::rl_chopper(311.0, r, l, f, 90.0, 800);
+    assert!(c.ok);
+    assert!(!c.continuous);
+    assert!(c.extinction_deg > 180.0 && c.extinction_deg < 270.0, "β′ = {}", c.extinction_deg);
+    let z = (r * r + (2.0 * std::f64::consts::PI * f * l).powi(2)).sqrt();
+    let full = 311.0f64.powi(2) * r / (2.0 * z * z);
+    assert!(c.avg_power > 0.0 && c.avg_power < full, "got {} vs full {full}", c.avg_power);
+}
+
+#[test]
+fn rl_chopper_rejects_bad_input() {
+    assert!(!calcsim_core::rl::rl_chopper(311.0, 50.0, 0.1, 50.0, 200.0, 800).ok); // α > 180
+    assert!(!calcsim_core::rl::rl_chopper(311.0, 50.0, 0.0, 50.0, 90.0, 800).ok); // L = 0
+}

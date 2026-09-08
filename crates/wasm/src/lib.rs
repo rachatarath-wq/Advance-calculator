@@ -43,3 +43,24 @@ pub fn chopper_power(
 ) -> String {
     calcsim_core::chopper_power_json(v_peak, load_r, frequency, alpha_deg, beta_deg, samples)
 }
+
+/// Steady-state power of a series RL (inductive/motor) load — see
+/// `calcsim_core::rl::RlPower`.
+#[wasm_bindgen]
+pub fn rl_ac_power(v_peak: f64, load_r: f64, load_l: f64, frequency: f64, samples: usize) -> String {
+    calcsim_core::rl_ac_power_json(v_peak, load_r, load_l, frequency, samples)
+}
+
+/// Phase-controlled (chopped) power of a series RL load — see
+/// `calcsim_core::rl::RlChopper`.
+#[wasm_bindgen]
+pub fn rl_chopper(
+    v_peak: f64,
+    load_r: f64,
+    load_l: f64,
+    frequency: f64,
+    alpha_deg: f64,
+    samples: usize,
+) -> String {
+    calcsim_core::rl_chopper_json(v_peak, load_r, load_l, frequency, alpha_deg, samples)
+}

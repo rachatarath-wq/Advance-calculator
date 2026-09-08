@@ -12,6 +12,7 @@ pub mod eval;
 pub mod integrate;
 pub mod parser;
 pub mod render;
+pub mod rl;
 pub mod sample;
 pub mod simplify;
 
@@ -160,5 +161,24 @@ pub fn chopper_power_json(
     samples: usize,
 ) -> String {
     serde_json::to_string(&chopper::chopper_power(v_peak, load_r, frequency, alpha_deg, beta_deg, samples))
+        .unwrap_or_else(|_| r#"{"ok":false,"error":"serialization failed"}"#.to_string())
+}
+
+/// JSON wrapper for [`rl::rl_ac_power`].
+pub fn rl_ac_power_json(v_peak: f64, load_r: f64, load_l: f64, frequency: f64, samples: usize) -> String {
+    serde_json::to_string(&rl::rl_ac_power(v_peak, load_r, load_l, frequency, samples))
+        .unwrap_or_else(|_| r#"{"ok":false,"error":"serialization failed"}"#.to_string())
+}
+
+/// JSON wrapper for [`rl::rl_chopper`].
+pub fn rl_chopper_json(
+    v_peak: f64,
+    load_r: f64,
+    load_l: f64,
+    frequency: f64,
+    alpha_deg: f64,
+    samples: usize,
+) -> String {
+    serde_json::to_string(&rl::rl_chopper(v_peak, load_r, load_l, frequency, alpha_deg, samples))
         .unwrap_or_else(|_| r#"{"ok":false,"error":"serialization failed"}"#.to_string())
 }

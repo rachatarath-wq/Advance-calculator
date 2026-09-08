@@ -3,6 +3,7 @@ import Katex from './Katex'
 import Plot from './Plot'
 import AcPowerPanel from './AcPower'
 import ChopperPowerPanel from './ChopperPower'
+import CoffeePanel from './Coffee'
 import { analyze, ensureEngine, type Analysis } from './engine'
 
 const SAMPLES = 400
@@ -66,7 +67,7 @@ function robustRange(series: number[][]): [number, number] {
 type Mode = 'derivative' | 'integral'
 
 export default function App() {
-  const [view, setView] = useState<'calculus' | 'acpower' | 'chopper'>('calculus')
+  const [view, setView] = useState<'calculus' | 'acpower' | 'chopper' | 'coffee'>('calculus')
   const [input, setInput] = useState(EXAMPLES[0])
   const [xMin, setXMin] = useState(-8)
   const [xMax, setXMax] = useState(8)
@@ -323,6 +324,9 @@ export default function App() {
         <button className={view === 'chopper' ? 'active' : ''} onClick={() => setView('chopper')}>
           ✂️ Chopper
         </button>
+        <button className={view === 'coffee' ? 'active' : ''} onClick={() => setView('coffee')}>
+          ☕ Coffee
+        </button>
       </nav>
 
       {view === 'calculus' && (
@@ -433,6 +437,8 @@ export default function App() {
       {view === 'acpower' && <AcPowerPanel />}
 
       {view === 'chopper' && <ChopperPowerPanel />}
+
+      {view === 'coffee' && <CoffeePanel />}
     </div>
   )
 }

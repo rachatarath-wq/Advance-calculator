@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useState } from 'react'
 import Katex from './Katex'
 import Plot from './Plot'
-import { acPower, ensureEngine, type AcPowerResult } from './engine'
+import { acPower, rlAcPower, ensureEngine, type AcPowerResult, type RlPowerResult } from './engine'
 
 const C = {
   v: '#4f8cff',
@@ -24,19 +24,27 @@ function acYRange(vs: number[], iVals: number[], ps: number[]): [number, number]
   return [-m, m]
 }
 
+type Mode = 'direct' | 'rl'
+
 export default function AcPowerPanel() {
+  const [mode, setMode] = useState<Mode>('direct')
   const [vPeak, setVPeak] = useState(311) // ≈ 220 Vrms · √2
   const [iPeak, setIPeak] = useState(2)
-  const [frequency, setFrequency] = useState(50)
   const [phaseDeg, setPhaseDeg] = useState(30)
-  const [result, setResult] = useState<AcPowerResult | null>(null)
+  const [loadR, setLoadR] = useState(50) // Ω
+  const [loadL, setLoadL] = useState(0.0919) // H → φ ≈ 30° at 50 Hz
+  const [frequency, setFrequency] = useState(50)
+  const [result, setResult] = useState<AcPowerResult | RlPowerResult | null>(null)
 
   useEffect(() => {
     let cancelled = false
     const t = setTimeout(async () => {
       try {
         await ensureEngine()
-        const r = acPower(vPeak, iPeak, frequency, phaseDeg, 600)
+        const r =
+          mode === 'direct'
+            ? acPower(vPeak, iPeak, frequency, phaseDeg, 600)
+            : rlAcPower(vPeak, loadR, loadL, frequency, 600)
         if (!cancelled) setResult(r)
       } catch {
         if (!cancelled) setResult(null)
@@ -46,7 +54,7 @@ export default function AcPowerPanel() {
       cancelled = true
       clearTimeout(t)
     }
-  }, [vPeak, iPeak, frequency, phaseDeg])
+  }, [mode, vPeak, iPeak, phaseDeg, loadR, loadL, frequency])
 
   const plotData = useMemo(() => {
     if (!result?.ok) return []
@@ -108,14 +116,33 @@ export default function AcPowerPanel() {
       <aside className="sidebar">
         <section className="card">
           <h2>AC circuit</h2>
+          <div className="sim-tabs" style={{ marginBottom: 12 }}>
+            <button className={mode === 'direct' ? 'active' : ''} onClick={() => setMode('direct')}>
+              Direct (I, φ)
+            </button>
+            <button className={mode === 'rl' ? 'active' : ''} onClick={() => setMode('rl')}>
+              RL load (motor)
+            </button>
+          </div>
           <div className="ac-grid">
-            <NumField label="V peak (V)" value={vPeak} onChange={setVPeak} />
-            <NumField label="I peak (A)" value={iPeak} onChange={setIPeak} />
+            <NumField label="V peak (V)" value={vPeak} onChange={setVPeak} min={0.001} />
             <NumField label="Frequency (Hz)" value={frequency} onChange={setFrequency} min={0.001} />
-            <NumField label="Phase φ (deg)" value={phaseDeg} onChange={setPhaseDeg} />
+            {mode === 'direct' ? (
+              <>
+                <NumField label="I peak (A)" value={iPeak} onChange={setIPeak} />
+                <NumField label="Phase φ (deg)" value={phaseDeg} onChange={setPhaseDeg} />
+              </>
+            ) : (
+              <>
+                <NumField label="Load R (Ω)" value={loadR} onChange={setLoadR} min={0.001} />
+                <NumField label="Load L (H)" value={loadL} onChange={setLoadL} min={0.001} />
+              </>
+            )}
           </div>
           <p className="sim-hint">
-            v(t) = V<sub>m</sub>·sin(ωt), &nbsp; i(t) = I<sub>m</sub>·sin(ωt + φ)
+            {mode === 'direct'
+              ? 'v(t) = Vm·sin(ωt),  i(t) = Im·sin(ωt + φ)'
+              : 'Z = R + jωL → i(t) lags v(t) by φ = atan(ωL/R)'}
           </p>
         </section>
 
@@ -128,6 +155,7 @@ export default function AcPowerPanel() {
               <div className="ac-formula">
                 <Katex block tex={result!.v_latex} />
                 <Katex block tex={result!.i_latex} />
+                {mode === 'rl' && <Katex block tex={(result as RlPowerResult).z_latex} />}
                 <Katex block tex={result!.integral_latex} />
               </div>
               <div className="stat-grid">
@@ -150,7 +178,7 @@ export default function AcPowerPanel() {
         <Plot data={plotData} layout={plotLayout} />
         <p className="sim-hint">
           The shaded area is the energy over two periods; the dashed line is the average (real) power
-          P = (1/T)∫₀ᵀ v(t)·i(t) dt. With a phase shift φ, P = V<sub>rms</sub>·I<sub>rms</sub>·cos φ.
+          P = (1/T)∫₀ᵀ v(t)·i(t) dt.
         </p>
       </section>
     </div>

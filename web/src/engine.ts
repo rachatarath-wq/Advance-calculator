@@ -4,6 +4,8 @@ import initWasm, {
   process as wasmProcess,
   ac_power as wasmAcPower,
   chopper_power as wasmChopperPower,
+  rl_ac_power as wasmRlAcPower,
+  rl_chopper as wasmRlChopper,
 } from './wasm/calcsim_wasm.js'
 import wasmUrl from './wasm/calcsim_wasm_bg.wasm?url'
 
@@ -126,4 +128,97 @@ export function chopperPower(
   return JSON.parse(
     wasmChopperPower(vPeak, loadR, frequency, alphaDeg, betaDeg, samples),
   ) as ChopperPowerResult
+}
+
+/** Mirrors `calcsim_core::rl::RlPower` (serde JSON). */
+export interface RlPowerResult {
+  ok: boolean
+  error?: string
+  v_peak: number
+  load_r: number
+  load_l: number
+  frequency: number
+  angular_freq: number
+  period: number
+  impedance: number
+  phase_deg: number
+  phase_rad: number
+  i_peak: number
+  rms_v: number
+  rms_i: number
+  avg_power: number
+  apparent_power: number
+  reactive_power: number
+  power_factor: number
+  v_latex: string
+  i_latex: string
+  z_latex: string
+  integral_latex: string
+  t0: number
+  t1: number
+  ts: number[]
+  vs: number[]
+  i_vals: number[]
+  ps: number[]
+}
+
+/** Mirrors `calcsim_core::rl::RlChopper` (serde JSON). */
+export interface RlChopperResult {
+  ok: boolean
+  error?: string
+  v_peak: number
+  load_r: number
+  load_l: number
+  frequency: number
+  alpha_deg: number
+  angular_freq: number
+  period: number
+  impedance: number
+  phase_deg: number
+  phase_rad: number
+  alpha_rad: number
+  continuous: boolean
+  extinction_deg: number
+  conduction_deg: number
+  avg_power: number
+  rms_v: number
+  rms_i: number
+  apparent_power: number
+  reactive_power: number
+  power_factor: number
+  v_latex: string
+  i_latex: string
+  integral_latex: string
+  note: string
+  t0: number
+  t1: number
+  ts: number[]
+  vs: number[]
+  i_vals: number[]
+  ps: number[]
+}
+
+/** Steady-state power of a series RL (inductive/motor) load under a full sine. */
+export function rlAcPower(
+  vPeak: number,
+  loadR: number,
+  loadL: number,
+  frequency: number,
+  samples = 600,
+): RlPowerResult {
+  return JSON.parse(wasmRlAcPower(vPeak, loadR, loadL, frequency, samples)) as RlPowerResult
+}
+
+/** Phase-controlled (chopped) power of a series RL load, fired at `alphaDeg`. */
+export function rlChopper(
+  vPeak: number,
+  loadR: number,
+  loadL: number,
+  frequency: number,
+  alphaDeg: number,
+  samples = 800,
+): RlChopperResult {
+  return JSON.parse(
+    wasmRlChopper(vPeak, loadR, loadL, frequency, alphaDeg, samples),
+  ) as RlChopperResult
 }
