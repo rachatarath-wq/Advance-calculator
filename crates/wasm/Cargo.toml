@@ -1,0 +1,13 @@
+[package]
+name = "calcsim-wasm"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+description = "wasm-bindgen wrapper exposing calcsim-core to JavaScript."
+
+[lib]
+crate-type = ["cdylib", "rlib"]
+
+[dependencies]
+calcsim-core = { path = "../core" }
+wasm-bindgen = "0.2"

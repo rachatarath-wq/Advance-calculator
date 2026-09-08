@@ -1,0 +1,12 @@
+[package]
+name = "calcsim-core"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+description = "Symbolic + numerical calculus engine (parser, differentiation, integration, sampling, LaTeX rendering)."
+
+[dependencies]
+serde = { version = "1", features = ["derive"] }
+serde_json = "1"
+
+[dev-dependencies]

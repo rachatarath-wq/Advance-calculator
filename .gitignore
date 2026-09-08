@@ -1,0 +1,12 @@
+# Rust
+/target
+crates/**/target
+
+# Frontend
+web/node_modules
+web/dist
+web/src/wasm
+
+# Misc
+.DS_Store
+*.log
