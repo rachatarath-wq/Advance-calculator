@@ -4,7 +4,9 @@ import react from '@vitejs/plugin-react'
 // https://vitejs.dev/config/
 export default defineConfig({
   plugins: [react()],
-  // The WASM glue loads its .wasm via `?url`, so no extra plugin is needed.
+  // Relative asset paths so the built bundle works from any base (GitHub Pages,
+  // sub-directory hosting, file://). The WASM glue loads its .wasm via `?url`.
+  base: './',
   build: {
     target: 'es2020',
     chunkSizeWarningLimit: 4000,

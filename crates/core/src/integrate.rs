@@ -58,6 +58,11 @@ pub fn integrate_symbolic(e: &Expr) -> Option<Expr> {
 pub fn integrate_numerical(e: &Expr, a: f64, b: f64) -> f64 {
     const EPS: f64 = 1e-7;
     const MAX_DEPTH: u32 = 20;
+    // Minimum subdivision depth before convergence may be accepted. Without it,
+    // an integrand whose sampled points all land on zeros (e.g. sin² over a full
+    // period) yields a `whole == 0` estimate that the adaptive step treats as
+    // converged, returning 0 instead of the true area.
+    const MIN_DEPTH: u32 = 4;
 
     fn simpson(_f: &Expr, a: f64, b: f64, fa: f64, fm: f64, fb: f64) -> f64 {
         (b - a) / 6.0 * (fa + 4.0 * fm + fb)
@@ -74,7 +79,7 @@ pub fn integrate_numerical(e: &Expr, a: f64, b: f64) -> f64 {
         let right = simpson(f, m, b, fm, frm, fb);
         let delta = left + right - whole;
 
-        if depth >= MAX_DEPTH || delta.abs() <= 15.0 * EPS {
+        if depth >= MAX_DEPTH || (depth >= MIN_DEPTH && delta.abs() <= 15.0 * EPS) {
             left + right + delta / 15.0
         } else {
             rec(f, a, m, fa, flm, fm, left, depth + 1)

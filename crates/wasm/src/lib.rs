@@ -13,3 +13,14 @@ use wasm_bindgen::prelude::*;
 pub fn process(input: &str, x_min: f64, x_max: f64, samples: usize) -> String {
     calcsim_core::process_json(input, x_min, x_max, samples)
 }
+
+/// Analyse a sinusoidal AC circuit and return power characteristics as JSON
+/// (see `calcsim_core::ac::AcPower`).
+///
+/// * `v_peak` / `i_peak` — peak voltage (V) / current (A)
+/// * `frequency` — Hz
+/// * `phase_deg` — current phase relative to voltage, degrees
+#[wasm_bindgen]
+pub fn ac_power(v_peak: f64, i_peak: f64, frequency: f64, phase_deg: f64, samples: usize) -> String {
+    calcsim_core::ac_power_json(v_peak, i_peak, frequency, phase_deg, samples)
+}

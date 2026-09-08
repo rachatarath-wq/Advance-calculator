@@ -92,3 +92,31 @@ fn constants_derivative_is_zero() {
     assert_eq!(derivative_of("pi"), "0");
     assert_eq!(derivative_of("5"), "0");
 }
+
+#[test]
+fn ac_power_resistive() {
+    // φ = 0 → pure resistive: P = Vm·Im/2 = 311·2/2 = 311 W.
+    let a = calcsim_core::ac::ac_power(311.0, 2.0, 50.0, 0.0, 600);
+    assert!(a.ok, "{}", a.error.unwrap_or_default());
+    assert!((a.avg_power - 311.0).abs() < 0.5, "got {}", a.avg_power);
+    assert!((a.power_factor - 1.0).abs() < 1e-9);
+    assert!((a.rms_v - 311.0 / 2.0f64.sqrt()).abs() < 1e-6);
+    assert_eq!(a.ts.len(), a.ps.len());
+}
+
+#[test]
+fn ac_power_pure_reactive() {
+    // φ = 90° → no real power: P ≈ 0 (reactive power only).
+    let a = calcsim_core::ac::ac_power(311.0, 2.0, 60.0, 90.0, 600);
+    assert!(a.ok);
+    assert!(a.avg_power.abs() < 1e-6, "got {}", a.avg_power);
+    assert!(a.reactive_power.abs() > 300.0);
+    assert!(a.power_factor.abs() < 1e-6);
+}
+
+#[test]
+fn ac_power_rejects_bad_frequency() {
+    let a = calcsim_core::ac::ac_power(311.0, 2.0, 0.0, 0.0, 600);
+    assert!(!a.ok);
+    assert!(a.error.is_some());
+}

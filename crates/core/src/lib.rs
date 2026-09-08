@@ -4,6 +4,7 @@
 //! which parse an input string, differentiate and integrate it, and return
 //! formatted results plus plottable samples for the frontend.
 
+pub mod ac;
 pub mod ast;
 pub mod diff;
 pub mod eval;
@@ -139,5 +140,11 @@ pub fn process(input: &str, x_min: f64, x_max: f64, samples: usize) -> Analysis 
 /// Convenience wrapper returning the analysis serialised as a JSON string.
 pub fn process_json(input: &str, x_min: f64, x_max: f64, samples: usize) -> String {
     serde_json::to_string(&process(input, x_min, x_max, samples))
+        .unwrap_or_else(|_| r#"{"ok":false,"error":"serialization failed"}"#.to_string())
+}
+
+/// JSON wrapper for [`ac::ac_power`].
+pub fn ac_power_json(v_peak: f64, i_peak: f64, frequency: f64, phase_deg: f64, samples: usize) -> String {
+    serde_json::to_string(&ac::ac_power(v_peak, i_peak, frequency, phase_deg, samples))
         .unwrap_or_else(|_| r#"{"ok":false,"error":"serialization failed"}"#.to_string())
 }

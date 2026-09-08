@@ -10,3 +10,6 @@ web/src/wasm
 # Misc
 .DS_Store
 *.log
+
+# Local Claude Code settings
+.claude/settings.local.json

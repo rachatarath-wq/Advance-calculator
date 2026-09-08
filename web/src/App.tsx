@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
 import Katex from './Katex'
 import Plot from './Plot'
+import AcPowerPanel from './AcPower'
 import { analyze, ensureEngine, type Analysis } from './engine'
 
 const SAMPLES = 400
@@ -64,6 +65,7 @@ function robustRange(series: number[][]): [number, number] {
 type Mode = 'derivative' | 'integral'
 
 export default function App() {
+  const [view, setView] = useState<'calculus' | 'acpower'>('calculus')
   const [input, setInput] = useState(EXAMPLES[0])
   const [xMin, setXMin] = useState(-8)
   const [xMax, setXMax] = useState(8)
@@ -310,6 +312,16 @@ export default function App() {
         </div>
       </header>
 
+      <nav className="nav-tabs">
+        <button className={view === 'calculus' ? 'active' : ''} onClick={() => setView('calculus')}>
+          ∫ Calculus
+        </button>
+        <button className={view === 'acpower' ? 'active' : ''} onClick={() => setView('acpower')}>
+          ⚡ AC Power
+        </button>
+      </nav>
+
+      {view === 'calculus' && (
       <main className="layout">
         <aside className="sidebar">
           <section className="card">
@@ -412,6 +424,9 @@ export default function App() {
           )}
         </section>
       </main>
+      )}
+
+      {view === 'acpower' && <AcPowerPanel />}
     </div>
   )
 }
