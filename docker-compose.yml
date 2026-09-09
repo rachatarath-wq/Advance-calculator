@@ -1,0 +1,13 @@
+services:
+  calcsim:
+    # Pull the published image from Docker Hub (default, no build needed).
+    image: rachata2567/calcsim:latest
+    # To build locally from the Dockerfile instead, comment out `image:` above
+    # and uncomment the line below.
+    # build: .
+    container_name: calcsim
+    restart: unless-stopped
+    ports:
+      # Change the host port via `PORT` env, or edit here directly.
+      # e.g. `PORT=80 docker compose up -d` to serve on port 80.
+      - "${PORT:-8080}:80"

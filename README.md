@@ -132,6 +132,51 @@ npm run preview    # serve the built bundle locally
 
 ---
 
+## Deploy with Docker
+
+The app is published as a **public** Docker image on Docker Hub:
+[`rachata2567/calcsim`](https://hub.docker.com/repository/docker/rachata2567/calcsim).
+
+It is a self-contained static site (nginx serving the built React + WASM bundle)
+— no backend or reverse proxy required.
+
+### Run the published image
+
+```bash
+docker run -d --name calcsim --restart unless-stopped -p 8080:80 rachata2567/calcsim:latest
+# → open http://localhost:8080
+```
+
+Or with Compose (see `docker-compose.yml`, defaults to the Hub image):
+
+```bash
+PORT=8080 docker compose up -d     # port 8080
+PORT=80   docker compose up -d     # serve directly on port 80
+```
+
+### Build locally (optional)
+
+```bash
+docker build -t calcsim:latest .
+# or, with `build: .` uncommented in docker-compose.yml:
+docker compose up -d --build
+```
+
+### Release a new version to Docker Hub
+
+Build and push a **multi-arch** image (`linux/amd64` + `linux/arm64`) so it runs
+on both x86 servers and ARM machines. A plain `docker build`/`docker push` would
+push only your local architecture — use `buildx` instead:
+
+```bash
+docker buildx build --platform linux/amd64,linux/arm64 \
+  -t rachata2567/calcsim:latest \
+  -t rachata2567/calcsim:0.1.0 \
+  --push .
+```
+
+---
+
 ## Supported syntax
 
 | Input | Meaning |

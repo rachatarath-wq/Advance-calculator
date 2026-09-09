@@ -1,0 +1,18 @@
+# VCS
+.git
+.gitignore
+.github
+
+# Rust build artifacts
+target
+crates/**/target
+
+# Frontend build artifacts / generated wasm
+web/node_modules
+web/dist
+web/src/wasm
+
+# Local tooling
+.claude
+.DS_Store
+*.log
