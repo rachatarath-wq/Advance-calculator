@@ -9,11 +9,13 @@ pub mod ast;
 pub mod chopper;
 pub mod diff;
 pub mod eval;
+pub mod fft;
 pub mod integrate;
 pub mod parser;
 pub mod render;
 pub mod rl;
 pub mod sample;
+pub mod shuttle;
 pub mod simplify;
 
 use ast::Expr;
@@ -180,5 +182,29 @@ pub fn rl_chopper_json(
     samples: usize,
 ) -> String {
     serde_json::to_string(&rl::rl_chopper(v_peak, load_r, load_l, frequency, alpha_deg, samples))
+        .unwrap_or_else(|_| r#"{"ok":false,"error":"serialization failed"}"#.to_string())
+}
+
+/// JSON wrapper for [`fft::fft_spectrum`].
+pub fn fft_spectrum_json(
+    fs: f64,
+    n: usize,
+    freqs: &[f64],
+    amps: &[f64],
+    phases_deg: &[f64],
+) -> String {
+    serde_json::to_string(&fft::fft_spectrum(fs, n, freqs, amps, phases_deg))
+        .unwrap_or_else(|_| r#"{"ok":false,"error":"serialization failed"}"#.to_string())
+}
+
+/// JSON wrapper for [`shuttle::shuttle_landing`].
+pub fn shuttle_landing_json(
+    h0: f64,
+    v0: f64,
+    gamma0_deg: f64,
+    flare_alt: f64,
+    alpha_flare_deg: f64,
+) -> String {
+    serde_json::to_string(&shuttle::shuttle_landing(h0, v0, gamma0_deg, flare_alt, alpha_flare_deg))
         .unwrap_or_else(|_| r#"{"ok":false,"error":"serialization failed"}"#.to_string())
 }

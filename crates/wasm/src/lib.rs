@@ -64,3 +64,37 @@ pub fn rl_chopper(
 ) -> String {
     calcsim_core::rl_chopper_json(v_peak, load_r, load_l, frequency, alpha_deg, samples)
 }
+
+/// Fast Fourier Transform from scratch — see `calcsim_core::fft::FftResult`.
+///
+/// * `fs` — sampling rate (Hz)
+/// * `n` — requested sample count (zero-padded to a power of two)
+/// * `freqs` / `amps` / `phases_deg` — the sinusoid components to sum (arrays)
+#[wasm_bindgen]
+pub fn fft_spectrum(
+    fs: f64,
+    n: usize,
+    freqs: Vec<f64>,
+    amps: Vec<f64>,
+    phases_deg: Vec<f64>,
+) -> String {
+    calcsim_core::fft_spectrum_json(fs, n, &freqs, &amps, &phases_deg)
+}
+
+/// Space shuttle landing simulation — see `calcsim_core::shuttle::ShuttleSim`.
+///
+/// * `h0` — initial altitude (m)
+/// * `v0` — initial speed (m/s)
+/// * `gamma0_deg` — initial glide-path angle (deg, negative = descending)
+/// * `flare_alt` — flare start altitude (m)
+/// * `alpha_flare_deg` — maximum flare angle of attack (deg)
+#[wasm_bindgen]
+pub fn shuttle_landing(
+    h0: f64,
+    v0: f64,
+    gamma0_deg: f64,
+    flare_alt: f64,
+    alpha_flare_deg: f64,
+) -> String {
+    calcsim_core::shuttle_landing_json(h0, v0, gamma0_deg, flare_alt, alpha_flare_deg)
+}

@@ -1,6 +1,6 @@
 # ความคืบหน้าโครงการ (Progress)
 
-อัปเดตล่าสุด: **2026-09-08** · commit `a801b8e` · live: https://rachatarath-wq.github.io/Advance-calculator/
+อัปเดตล่าสุด: **2026-09-18** · live: https://rachatarath-wq.github.io/Advance-calculator/
 
 ไฟล์นี้สรุป **สิ่งที่ทำเสร็จแล้ว** และ **สิ่งที่ยังขาด** เพื่อใช้ต่อยอดใน session ถัดไป
 
@@ -39,6 +39,23 @@
 - GitHub Pages auto ผ่าน `.github/workflows/deploy.yml` (push `main` → build WASM+Vite → deploy)
 - Pages เปิดแบบ `build_type: workflow` แล้ว (ไม่ต้อง enable ซ้ำ)
 
+### 7. FFT from scratch (Euler's formula) — `crates/core/src/fft.rs`
+- จำนวนเชิงซ้อน `C64` แบบไม่มี dependency + `exp_i(θ)` จาก Euler
+- DFT naive O(N²) + **Cooley–Tukey Radix-2 DIT** O(N log N) (bit-reversal + in-place butterfly), twiddle `W_N^k = e^{−i2πk/N}`
+- `fft_spectrum`: สร้างสัญญาณหลายความถี่ → zero-pad → FFT → one-sided amplitude spectrum + peak detection + cross-check เทียบ DFT
+- Panel: `web/src/Fft.tsx` (ป้อน fs/n + 3 components, แสดง signal/spectrum, peaks, error)
+- Test: FFT==DFT (~1e-13), recover ความถี่/แอมพลิจูดตรง bin (fs=1024, n=512, Δf=2Hz)
+
+### 8. Space Shuttle Landing — `crates/core/src/shuttle.rs`
+- Point-mass flight dynamics (lift/drag/gravity) + `α = θ − γ`, atmosphere `ρ(y)=ρ₀e^{−y/H}` + ground effect
+- Flare: flight-path schedule + **PI controller** (มี anti-windup) — ป้องกัน steady-state error ที่ α trim ไม่ตรงความเร็ว touchdown
+- Pitch short-period mode `θ̈+2ζωₙθ̇+ωₙ²θ=ωₙ²θ_cmd` → รากเชิงซ้อน → phasor (Euler)
+- Integrators: Euler (O(h)) / Heun (O(h²)) / RK4 (O(h⁴)), เปรียบเทียบที่ Δt=0.2s ให้เห็น error ของ Euler ชัด
+- Safety checks: sink ≤ 1.5 m/s, 60 ≤ v ≤ 130 m/s, pitch ≤ 25°, forward
+- Panel: `web/src/ShuttleLanding.tsx` (h0/v0/γ0/flare_alt/α_flare, trajectory/telemetry, safety, integrator table)
+- Default `(3000, 135, −12°, 350, 10°)` → safe (sink ≈ 1.0 m/s, v ≈ 87 m/s)
+- 6 Rust tests ผ่าน
+
 ---
 
 ## 🚧 ยังขาด / TODO (ค่อยมาทำต่อ)
@@ -57,7 +74,7 @@
 - แนะนำ: string dictionary / i18n (อย่างน้อย labels + hint)
 
 ### D. README.md ยังไม่ update
-- README ยังอธิบายแค่ symbolic calc — ยังไม่มี AC Power / Chopper / RL / Coffee
+- README ยังอธิบายแค่ symbolic calc — ยังไม่มี AC Power / Chopper / RL / Coffee / FFT / Shuttle
 
 ### E. Power-electronics เพิ่มเติม (ถ้าจะไปต่อ)
 - PWM / inverter (DC chopper, buck/boost), three-phase AC, active/reactive power แยกต่อเฟส
@@ -81,3 +98,4 @@ web/src/App.tsx              → เพิ่ม view + nav tab
 ค่า default ยึด **ไฟบ้านไทย**: `Vm = 311 V` (220 Vrms), `f = 50 Hz`, มุมเป็นองศา
 
 ทดสอบ: `cargo test` → `cd web && npm run build` → `git push origin main` (deploy อัตโนมัติ)
+

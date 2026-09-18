@@ -23,6 +23,13 @@ LaTeX rendering.
 - **Integration simulation** — shade the area under `f(x)` between limits `a`
   and `b`, with the live definite-integral value.
 - **LaTeX results** rendered with KaTeX (no CDN, fully offline).
+- **AC / chopper / RL power** — phase-controlled AC, TRIAC phase control and
+  inductive (motor) loads with real/reactive/apparent power and power factor.
+- **FFT from scratch** — dependency-free DFT + Radix-2 Cooley–Tukey DIT built on
+  Euler's twiddle phasors, with spectrum/peak extraction and a DFT cross-check.
+- **Space shuttle landing** — point-mass glide/flare/touchdown simulation with
+  PI flight-path control, a phasor short-period pitch mode, and an Euler/Heun/RK4
+  integrator comparison with safety checks.
 
 ---
 
@@ -54,6 +61,11 @@ Adv-Cal-sim/
 │   │   │   ├── eval.rs         # numeric evaluation
 │   │   │   ├── sample.rs       # grid + (x,y) sampling with NaN gaps
 │   │   │   ├── render.rs       # ASCII + LaTeX rendering
+│   │   │   ├── ac.rs           # AC power (resistive + RL)
+│   │   │   ├── chopper.rs      # phase-controlled (chopped) power
+│   │   │   ├── rl.rs           # RL / motor load
+│   │   │   ├── fft.rs          # DFT + Radix-2 FFT from scratch
+│   │   │   ├── shuttle.rs      # shuttle landing flight-dynamics simulation
 │   │   │   └── lib.rs          # `process` entry point → Analysis JSON
 │   │   └── tests/engine.rs     # integration tests
 │   └── wasm/

@@ -4,6 +4,8 @@ import Plot from './Plot'
 import AcPowerPanel from './AcPower'
 import ChopperPowerPanel from './ChopperPower'
 import CoffeePanel from './Coffee'
+import FftPanel from './Fft'
+import ShuttleLandingPanel from './ShuttleLanding'
 import { analyze, ensureEngine, type Analysis } from './engine'
 
 const SAMPLES = 400
@@ -67,7 +69,7 @@ function robustRange(series: number[][]): [number, number] {
 type Mode = 'derivative' | 'integral'
 
 export default function App() {
-  const [view, setView] = useState<'calculus' | 'acpower' | 'chopper' | 'coffee'>('calculus')
+  const [view, setView] = useState<'calculus' | 'acpower' | 'chopper' | 'coffee' | 'fft' | 'shuttle'>('calculus')
   const [input, setInput] = useState(EXAMPLES[0])
   const [xMin, setXMin] = useState(-8)
   const [xMax, setXMax] = useState(8)
@@ -324,6 +326,12 @@ export default function App() {
         <button className={view === 'chopper' ? 'active' : ''} onClick={() => setView('chopper')}>
           ✂️ Chopper
         </button>
+        <button className={view === 'fft' ? 'active' : ''} onClick={() => setView('fft')}>
+          ⚡ FFT
+        </button>
+        <button className={view === 'shuttle' ? 'active' : ''} onClick={() => setView('shuttle')}>
+          🚀 Shuttle
+        </button>
         <button className={view === 'coffee' ? 'active' : ''} onClick={() => setView('coffee')}>
           ☕ Coffee
         </button>
@@ -437,6 +445,10 @@ export default function App() {
       {view === 'acpower' && <AcPowerPanel />}
 
       {view === 'chopper' && <ChopperPowerPanel />}
+
+      {view === 'fft' && <FftPanel />}
+
+      {view === 'shuttle' && <ShuttleLandingPanel />}
 
       {view === 'coffee' && <CoffeePanel />}
     </div>

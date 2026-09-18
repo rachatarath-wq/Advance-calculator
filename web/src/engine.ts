@@ -6,6 +6,8 @@ import initWasm, {
   chopper_power as wasmChopperPower,
   rl_ac_power as wasmRlAcPower,
   rl_chopper as wasmRlChopper,
+  fft_spectrum as wasmFftSpectrum,
+  shuttle_landing as wasmShuttleLanding,
 } from './wasm/calcsim_wasm.js'
 import wasmUrl from './wasm/calcsim_wasm_bg.wasm?url'
 
@@ -221,4 +223,111 @@ export function rlChopper(
   return JSON.parse(
     wasmRlChopper(vPeak, loadR, loadL, frequency, alphaDeg, samples),
   ) as RlChopperResult
+}
+
+/** Mirrors `calcsim_core::fft::FftResult` (serde JSON). */
+export interface FftResult {
+  ok: boolean
+  error?: string
+  fs: number
+  n: number
+  n_padded: number
+  freqs_in: number[]
+  amps_in: number[]
+  phases_in: number[]
+  df: number
+  nyquist: number
+  ts: number[]
+  xs: number[]
+  spectrum_freqs: number[]
+  spectrum_mag: number[]
+  spectrum_amp: number[]
+  peak_freqs: number[]
+  peak_amps: number[]
+  dft_max_err: number
+  dft_latex: string
+  twiddle_latex: string
+  result_latex: string
+}
+
+/** Radix-2 FFT from scratch of a multi-frequency cosine signal. */
+export function fftSpectrum(
+  fs: number,
+  n: number,
+  freqs: number[],
+  amps: number[],
+  phasesDeg: number[],
+): FftResult {
+  // wasm-bindgen exposes `Vec<f64>` as `Float64Array`.
+  return JSON.parse(
+    wasmFftSpectrum(
+      fs,
+      n,
+      Float64Array.from(freqs),
+      Float64Array.from(amps),
+      Float64Array.from(phasesDeg),
+    ),
+  ) as FftResult
+}
+
+/** Mirrors `calcsim_core::shuttle::LandingCheck` / `MethodResult`. */
+export interface LandingCheck {
+  name: string
+  pass: boolean
+  value: number
+  limit: number
+}
+
+export interface MethodResult {
+  name: string
+  t_touch: number
+  x_touch: number
+  sink_rate: number
+  v_touch: number
+}
+
+/** Mirrors `calcsim_core::shuttle::ShuttleSim` (serde JSON). */
+export interface ShuttleSim {
+  ok: boolean
+  error?: string
+  h0: number
+  v0: number
+  gamma0_deg: number
+  flare_alt: number
+  alpha_flare_deg: number
+  sigma: number
+  omega_d: number
+  period_d: number
+  t_touch: number
+  x_touch: number
+  v_touch: number
+  sink_rate: number
+  gamma_touch_deg: number
+  alpha_touch_deg: number
+  theta_touch_deg: number
+  safe: boolean
+  checks: LandingCheck[]
+  methods: MethodResult[]
+  ts: number[]
+  xs: number[]
+  ys: number[]
+  vs: number[]
+  gammas: number[]
+  alphas: number[]
+  sinks: number[]
+  eom_latex: string
+  phasor_latex: string
+}
+
+/** Space-shuttle landing glide/flare/touchdown simulation (RK4 reference). */
+export function shuttleLanding(
+  h0: number,
+  v0: number,
+  gamma0Deg: number,
+  flareAlt: number,
+  alphaFlareDeg: number,
+): ShuttleSim {
+  return JSON.parse(
+    wasmShuttleLanding(h0, v0, gamma0Deg, flareAlt, alphaFlareDeg),
+  ) as ShuttleSim
 }
