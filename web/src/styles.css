@@ -162,6 +162,7 @@ body {
 }
 .fn-input-row input {
   flex: 1;
+  min-width: 0; /* let the text input shrink with the flex row instead of overflowing */
   background: transparent;
   border: none;
   outline: none;
@@ -205,6 +206,7 @@ body {
   gap: 4px;
   font-size: 12px;
   color: var(--muted);
+  min-width: 0; /* allow the 1fr track to shrink below the input's intrinsic min-width */
 }
 .domain-row input {
   background: var(--bg);
@@ -213,6 +215,8 @@ body {
   color: var(--text);
   padding: 7px 10px;
   font-family: ui-monospace, Menlo, monospace;
+  width: 100%; /* fill the track instead of defaulting to the input's intrinsic width */
+  min-width: 0;
 }
 
 /* ---------- Results ---------- */
@@ -396,6 +400,54 @@ input[type='range'] {
   margin: 2px 0 0;
   font-size: 12px;
   color: var(--muted);
+}
+
+/* ---------- Realtime playback ---------- */
+.replay-controls {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+  margin-bottom: 10px;
+}
+.replay-btn {
+  border: 1px solid var(--border);
+  background: var(--panel-2);
+  color: var(--text);
+  font-weight: 700;
+  padding: 8px 14px;
+  border-radius: 9px;
+  cursor: pointer;
+  font-size: 13px;
+  transition: 0.15s;
+}
+.replay-btn:hover {
+  border-color: var(--accent);
+  color: #fff;
+}
+.speed-btns {
+  display: flex;
+  gap: 4px;
+  margin-left: auto;
+}
+.speed-btn {
+  border: 1px solid var(--border);
+  background: transparent;
+  color: var(--muted);
+  font-weight: 600;
+  padding: 6px 10px;
+  border-radius: 8px;
+  cursor: pointer;
+  font-size: 12px;
+}
+.speed-btn.active {
+  background: linear-gradient(135deg, #4f8cff, #3b6fe0);
+  color: #fff;
+  border-color: transparent;
+}
+.replay-slider {
+  width: 100%;
+  margin: 4px 0 12px;
 }
 
 /* ---------- Responsive ---------- */

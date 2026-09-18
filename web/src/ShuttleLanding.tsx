@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react'
+import { useEffect, useMemo, useRef, useState, type ChangeEvent } from 'react'
 import Katex from './Katex'
 import Plot from './Plot'
 import { shuttleLanding, ensureEngine, type ShuttleSim } from './engine'
@@ -15,7 +15,33 @@ function fmt(v: number, digits = 3) {
   return Number(v.toFixed(digits))
 }
 
-type View = 'profile' | 'speed' | 'angles'
+/** Largest sample index whose time is <= t (ts is monotonic increasing). */
+function indexAt(ts: number[], t: number): number {
+  const n = ts.length
+  if (n <= 1 || t <= ts[0]) return 0
+  if (t >= ts[n - 1]) return n - 1
+  let lo = 0
+  let hi = n - 1
+  while (hi - lo > 1) {
+    const mid = (lo + hi) >> 1
+    if (ts[mid] <= t) lo = mid
+    else hi = mid
+  }
+  return lo
+}
+
+/** Linear-interpolate `vals` at time `t`. */
+function sampleAt(ts: number[], vals: number[], t: number): number {
+  const n = ts.length
+  if (n === 0) return 0
+  if (t <= ts[0]) return vals[0]
+  if (t >= ts[n - 1]) return vals[n - 1]
+  const lo = indexAt(ts, t)
+  const frac = (t - ts[lo]) / (ts[lo + 1] - ts[lo])
+  return vals[lo] + frac * (vals[lo + 1] - vals[lo])
+}
+
+type View = 'profile' | 'speed' | 'angles' | 'realtime'
 
 export default function ShuttleLandingPanel() {
   const [h0, setH0] = useState(3000)
@@ -25,6 +51,67 @@ export default function ShuttleLandingPanel() {
   const [alphaFlare, setAlphaFlare] = useState(10)
   const [view, setView] = useState<View>('profile')
   const [result, setResult] = useState<ShuttleSim | null>(null)
+  const [simTime, setSimTime] = useState(0)
+  const [playing, setPlaying] = useState(false)
+  const [speed, setSpeed] = useState(1)
+  const simTimeRef = useRef(0)
+
+  // Reset playback whenever the simulation inputs change (new trajectory).
+  useEffect(() => {
+    simTimeRef.current = 0
+    setSimTime(0)
+    setPlaying(false)
+  }, [result])
+
+  // Real-time playback loop (requestAnimationFrame), advancing simTime at `speed`×.
+  useEffect(() => {
+    if (!playing || !result?.ok) return
+    let raf = 0
+    let last = performance.now()
+    const step = (now: number) => {
+      const dt = (now - last) / 1000
+      last = now
+      const next = simTimeRef.current + dt * speed
+      if (next >= result.t_touch) {
+        simTimeRef.current = result.t_touch
+        setSimTime(result.t_touch)
+        setPlaying(false)
+        return
+      }
+      simTimeRef.current = next
+      setSimTime(next)
+      raf = requestAnimationFrame(step)
+    }
+    raf = requestAnimationFrame(step)
+    return () => cancelAnimationFrame(raf)
+  }, [playing, speed, result])
+
+  const restart = () => {
+    simTimeRef.current = 0
+    setSimTime(0)
+    setPlaying(true)
+  }
+
+  const onScrub = (e: ChangeEvent<HTMLInputElement>) => {
+    const t = Number(e.target.value)
+    simTimeRef.current = t
+    setSimTime(t)
+    setPlaying(false)
+  }
+
+  const live = useMemo(() => {
+    if (!result?.ok) return null
+    const { ts, xs, ys, vs, gammas, alphas, sinks } = result
+    return {
+      t: simTime,
+      x: sampleAt(ts, xs, simTime),
+      y: sampleAt(ts, ys, simTime),
+      v: sampleAt(ts, vs, simTime),
+      gamma: sampleAt(ts, gammas, simTime),
+      alpha: sampleAt(ts, alphas, simTime),
+      sink: sampleAt(ts, sinks, simTime),
+    }
+  }, [result, simTime])
 
   useEffect(() => {
     let cancelled = false
@@ -91,6 +178,45 @@ export default function ShuttleLandingPanel() {
         },
       ]
     }
+    if (view === 'realtime') {
+      const idx = indexAt(result.ts, simTime)
+      const start = Math.max(0, idx - 60)
+      return [
+        {
+          x: result.xs,
+          y: result.ys,
+          type: 'scatter',
+          mode: 'lines',
+          name: 'trajectory',
+          line: { color: C.y, width: 1.5 },
+          hoverinfo: 'skip',
+        },
+        {
+          x: result.xs.slice(start, idx + 1),
+          y: result.ys.slice(start, idx + 1),
+          type: 'scatter',
+          mode: 'lines',
+          name: 'flown path',
+          line: { color: C.alpha, width: 3 },
+          hoverinfo: 'skip',
+        },
+        {
+          x: [sampleAt(result.ts, result.xs, simTime)],
+          y: [sampleAt(result.ts, result.ys, simTime)],
+          type: 'scatter',
+          mode: 'markers',
+          name: 'shuttle',
+          marker: {
+            symbol: 'triangle-up',
+            size: 18,
+            color: '#ffffff',
+            line: { color: C.alpha, width: 2 },
+          },
+          text: [`t = ${simTime.toFixed(1)} s`],
+          hovertemplate: '%{text}<br>x = %{x:.0f} m<br>y = %{y:.0f} m<extra></extra>',
+        },
+      ]
+    }
     return [
       {
         x: result.ts,
@@ -111,32 +237,40 @@ export default function ShuttleLandingPanel() {
         hovertemplate: 't = %{x:.1f} s<br>α = %{y:.2f}°<extra></extra>',
       },
     ]
-  }, [result, view])
+  }, [result, view, simTime])
 
   const plotLayout = useMemo(() => {
     if (!result?.ok) return {}
-    const axisTitle = view === 'profile' ? 'downrange x (m)' : 'time t (s)'
-    const yTitle = view === 'profile' ? 'altitude y (m)' : view === 'speed' ? 'speed (m/s)' : 'angle (deg)'
+    const isProfile = view === 'profile' || view === 'realtime'
+    const axisTitle = isProfile ? 'downrange x (m)' : 'time t (s)'
+    const yTitle = isProfile ? 'altitude y (m)' : view === 'speed' ? 'speed (m/s)' : 'angle (deg)'
+    const xaxis: any = {
+      title: { text: axisTitle, font: { color: '#8ea0b8' } },
+      zeroline: true,
+      zerolinecolor: '#334155',
+      gridcolor: '#1e293b',
+    }
+    const yaxis: any = {
+      title: { text: yTitle, font: { color: '#8ea0b8' } },
+      zeroline: true,
+      zerolinecolor: '#334155',
+      gridcolor: '#1e293b',
+    }
+    if (view === 'realtime') {
+      xaxis.range = [0, result.x_touch]
+      yaxis.range = [0, result.h0]
+    }
     return {
       margin: { l: 52, r: 16, t: 24, b: 44 },
       paper_bgcolor: 'transparent',
       plot_bgcolor: 'transparent',
       font: { color: '#cbd5e1', family: 'Inter, system-ui, -apple-system, sans-serif', size: 12 },
-      xaxis: {
-        title: { text: axisTitle, font: { color: '#8ea0b8' } },
-        zeroline: true,
-        zerolinecolor: '#334155',
-        gridcolor: '#1e293b',
-      },
-      yaxis: {
-        title: { text: yTitle, font: { color: '#8ea0b8' } },
-        zeroline: true,
-        zerolinecolor: '#334155',
-        gridcolor: '#1e293b',
-      },
+      xaxis,
+      yaxis,
       showlegend: true,
       legend: { orientation: 'h', y: 1.12, x: 0, bgcolor: 'transparent', font: { size: 12 } },
       hovermode: 'closest',
+      uirevision: view === 'realtime' ? 'realtime' : undefined,
     }
   }, [result, view])
 
@@ -223,6 +357,50 @@ export default function ShuttleLandingPanel() {
             </>
           )}
         </section>
+
+        {view === 'realtime' && ok && (
+          <section className="card">
+            <h2>Realtime playback</h2>
+            <div className="replay-controls">
+              <button className="replay-btn" onClick={() => setPlaying((p) => !p)}>
+                {playing ? '⏸ Pause' : '▶ Play'}
+              </button>
+              <button className="replay-btn" onClick={restart}>
+                ↺ Restart
+              </button>
+              <div className="speed-btns">
+                {[0.5, 1, 2, 4].map((s) => (
+                  <button
+                    key={s}
+                    className={'speed-btn' + (speed === s ? ' active' : '')}
+                    onClick={() => setSpeed(s)}
+                  >
+                    {s}×
+                  </button>
+                ))}
+              </div>
+            </div>
+            <input
+              type="range"
+              className="replay-slider"
+              min={0}
+              max={result!.t_touch}
+              step={0.02}
+              value={simTime}
+              onChange={onScrub}
+            />
+            {live && (
+              <div className="stat-grid">
+                <Stat label="t" value={live.t} unit="s" />
+                <Stat label="altitude" value={live.y} unit="m" />
+                <Stat label="downrange" value={live.x} unit="m" />
+                <Stat label="speed" value={live.v} unit="m/s" />
+                <Stat label="sink" value={live.sink} unit="m/s" accent />
+                <Stat label="γ" value={live.gamma} unit="deg" />
+              </div>
+            )}
+          </section>
+        )}
       </aside>
 
       <section className="plot-panel">
@@ -235,6 +413,9 @@ export default function ShuttleLandingPanel() {
           </button>
           <button className={view === 'angles' ? 'active' : ''} onClick={() => setView('angles')}>
             γ & α
+          </button>
+          <button className={view === 'realtime' ? 'active' : ''} onClick={() => setView('realtime')}>
+            ▶ Realtime
           </button>
         </div>
 
