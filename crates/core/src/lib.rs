@@ -11,6 +11,7 @@ pub mod diff;
 pub mod eval;
 pub mod fft;
 pub mod integrate;
+pub mod moon;
 pub mod parser;
 pub mod render;
 pub mod rl;
@@ -206,5 +207,11 @@ pub fn shuttle_landing_json(
     alpha_flare_deg: f64,
 ) -> String {
     serde_json::to_string(&shuttle::shuttle_landing(h0, v0, gamma0_deg, flare_alt, alpha_flare_deg))
+        .unwrap_or_else(|_| r#"{"ok":false,"error":"serialization failed"}"#.to_string())
+}
+
+/// JSON wrapper for [`moon::moon_mission`].
+pub fn moon_mission_json(target_deg: f64, thrust_g: f64) -> String {
+    serde_json::to_string(&moon::moon_mission(target_deg, thrust_g))
         .unwrap_or_else(|_| r#"{"ok":false,"error":"serialization failed"}"#.to_string())
 }

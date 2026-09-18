@@ -6,6 +6,7 @@ import ChopperPowerPanel from './ChopperPower'
 import CoffeePanel from './Coffee'
 import FftPanel from './Fft'
 import ShuttleLandingPanel from './ShuttleLanding'
+import MoonMissionPanel from './MoonMission'
 import { analyze, ensureEngine, type Analysis } from './engine'
 
 const SAMPLES = 400
@@ -69,7 +70,7 @@ function robustRange(series: number[][]): [number, number] {
 type Mode = 'derivative' | 'integral'
 
 export default function App() {
-  const [view, setView] = useState<'calculus' | 'acpower' | 'chopper' | 'coffee' | 'fft' | 'shuttle'>('calculus')
+  const [view, setView] = useState<'calculus' | 'acpower' | 'chopper' | 'coffee' | 'fft' | 'shuttle' | 'moon'>('calculus')
   const [input, setInput] = useState(EXAMPLES[0])
   const [xMin, setXMin] = useState(-8)
   const [xMax, setXMax] = useState(8)
@@ -332,6 +333,9 @@ export default function App() {
         <button className={view === 'shuttle' ? 'active' : ''} onClick={() => setView('shuttle')}>
           🚀 Shuttle
         </button>
+        <button className={view === 'moon' ? 'active' : ''} onClick={() => setView('moon')}>
+          🌙 Moon
+        </button>
         <button className={view === 'coffee' ? 'active' : ''} onClick={() => setView('coffee')}>
           ☕ Coffee
         </button>
@@ -449,6 +453,8 @@ export default function App() {
       {view === 'fft' && <FftPanel />}
 
       {view === 'shuttle' && <ShuttleLandingPanel />}
+
+      {view === 'moon' && <MoonMissionPanel />}
 
       {view === 'coffee' && <CoffeePanel />}
     </div>

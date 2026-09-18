@@ -8,6 +8,7 @@ import initWasm, {
   rl_chopper as wasmRlChopper,
   fft_spectrum as wasmFftSpectrum,
   shuttle_landing as wasmShuttleLanding,
+  moon_mission as wasmMoonMission,
 } from './wasm/calcsim_wasm.js'
 import wasmUrl from './wasm/calcsim_wasm_bg.wasm?url'
 
@@ -330,4 +331,39 @@ export function shuttleLanding(
   return JSON.parse(
     wasmShuttleLanding(h0, v0, gamma0Deg, flareAlt, alphaFlareDeg),
   ) as ShuttleSim
+}
+
+/** Mirrors `calcsim_core::moon::MoonPhase`. */
+export interface MoonPhase {
+  name: string
+  t: number
+}
+
+/** Mirrors `calcsim_core::moon::MoonMission` (serde JSON). */
+export interface MoonMission {
+  ok: boolean
+  error?: string
+  target_deg: number
+  thrust_g: number
+  landed: boolean
+  total_time_h: number
+  max_speed_km_s: number
+  max_distance_km: number
+  earth_r: number
+  moon_r: number
+  moon_x: number
+  phases: MoonPhase[]
+  waypoints_x: number[]
+  waypoints_y: number[]
+  ts: number[]
+  xs: number[]
+  ys: number[]
+  speeds: number[]
+  thrusts: number[]
+  eom_latex: string
+}
+
+/** Earth→Moon mission: launch, transfer, lunar swing-by, return to a targeted landing site. */
+export function moonMission(targetDeg: number, thrustG: number): MoonMission {
+  return JSON.parse(wasmMoonMission(targetDeg, thrustG)) as MoonMission
 }

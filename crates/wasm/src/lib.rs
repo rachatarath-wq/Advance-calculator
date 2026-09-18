@@ -98,3 +98,12 @@ pub fn shuttle_landing(
 ) -> String {
     calcsim_core::shuttle_landing_json(h0, v0, gamma0_deg, flare_alt, alpha_flare_deg)
 }
+
+/// Earth→Moon mission simulation — see `calcsim_core::moon::MoonMission`.
+///
+/// * `target_deg` — landing-site angle around Earth (deg; 0° = launch site)
+/// * `thrust_g` — maximum thrust in units of Earth surface gravity
+#[wasm_bindgen]
+pub fn moon_mission(target_deg: f64, thrust_g: f64) -> String {
+    calcsim_core::moon_mission_json(target_deg, thrust_g)
+}
