@@ -113,6 +113,9 @@ export default function ShuttleLandingPanel() {
     }
   }, [result, simTime])
 
+  const done = result?.ok ? simTime >= result.t_touch - 1e-9 : false
+  const failedChecks = result?.ok ? result.checks.filter((c) => !c.pass) : []
+
   useEffect(() => {
     let cancelled = false
     const t = setTimeout(async () => {
@@ -181,7 +184,7 @@ export default function ShuttleLandingPanel() {
     if (view === 'realtime') {
       const idx = indexAt(result.ts, simTime)
       const start = Math.max(0, idx - 60)
-      return [
+      const traces: any[] = [
         {
           x: result.xs,
           y: result.ys,
@@ -216,6 +219,45 @@ export default function ShuttleLandingPanel() {
           hovertemplate: '%{text}<br>x = %{x:.0f} m<br>y = %{y:.0f} m<extra></extra>',
         },
       ]
+      // Landing outcome: green star on a safe touchdown, red ✗ + debris on a crash.
+      if (done) {
+        if (result.safe) {
+          traces.push({
+            x: [result.x_touch],
+            y: [3],
+            type: 'scatter',
+            mode: 'markers',
+            name: 'LANDED ✓',
+            marker: { symbol: 'star', size: 22, color: '#34d399', line: { color: '#fff', width: 1 } },
+            hoverinfo: 'skip',
+          })
+        } else {
+          const R = Math.max(60, result.h0 * 0.06)
+          const debris = Array.from({ length: 8 }, (_, i) => {
+            const a = (i / 8) * 2 * Math.PI
+            return [result.x_touch + R * Math.cos(a), 3 + R * Math.sin(a)]
+          })
+          traces.push({
+            x: [result.x_touch],
+            y: [3],
+            type: 'scatter',
+            mode: 'markers',
+            name: 'CRASH ✗',
+            marker: { symbol: 'x', size: 32, color: '#ff5c8a', line: { width: 3 } },
+            hoverinfo: 'skip',
+          })
+          traces.push({
+            x: debris.map((d) => d[0]),
+            y: debris.map((d) => d[1]),
+            type: 'scatter',
+            mode: 'markers',
+            name: 'debris',
+            marker: { symbol: 'circle', size: 6, color: '#ff5c8a' },
+            hoverinfo: 'skip',
+          })
+        }
+      }
+      return traces
     }
     return [
       {
@@ -397,6 +439,20 @@ export default function ShuttleLandingPanel() {
                 <Stat label="speed" value={live.v} unit="m/s" />
                 <Stat label="sink" value={live.sink} unit="m/s" accent />
                 <Stat label="γ" value={live.gamma} unit="deg" />
+              </div>
+            )}
+            {done && (
+              <div className={'landing-banner' + (result!.safe ? ' landing-ok' : ' landing-crash')}>
+                <span className="landing-verdict">
+                  {result!.safe ? '✓ LANDED SAFELY' : '✗ CRASHED'}
+                </span>
+                {!result!.safe && failedChecks.length > 0 && (
+                  <ul className="crash-reasons">
+                    {failedChecks.map((c, i) => (
+                      <li key={i}>{c.name}</li>
+                    ))}
+                  </ul>
+                )}
               </div>
             )}
           </section>

@@ -449,6 +449,39 @@ input[type='range'] {
   width: 100%;
   margin: 4px 0 12px;
 }
+.landing-banner {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  margin-top: 4px;
+  padding: 12px 14px;
+  border-radius: 10px;
+  font-weight: 800;
+  font-size: 14px;
+  letter-spacing: 0.04em;
+  text-align: center;
+}
+.landing-ok {
+  background: rgba(52, 211, 153, 0.12);
+  border: 1px solid #34d399;
+  color: #34d399;
+}
+.landing-crash {
+  background: rgba(255, 92, 138, 0.12);
+  border: 1px solid #ff5c8a;
+  color: #ff5c8a;
+}
+.landing-verdict {
+  font-size: 15px;
+}
+.crash-reasons {
+  margin: 0;
+  padding: 0 0 0 16px;
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--muted);
+  text-align: left;
+}
 
 /* ---------- Responsive ---------- */
 @media (max-width: 900px) {
